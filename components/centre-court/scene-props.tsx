@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
-import { Float, Text } from '@react-three/drei'
+import { Billboard, Float, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { TennisBall } from './tennis-ball'
@@ -33,18 +33,21 @@ export function OrbitingSkills() {
           return (
             <group key={skill} position={[x, y, z]}>
               <TennisBall radius={0.6} glow spin={1.5} />
-              <Text
-                font="/fonts/Geist-Regular.ttf"
-                fontSize={0.42}
-                position={[0, -0.95, 0]}
-                color="#f4f7f2"
-                anchorX="center"
-                anchorY="middle"
-                outlineWidth={0.015}
-                outlineColor="#091118"
-              >
-                {skill}
-              </Text>
+              {/* Billboard keeps the elegant label always facing the viewer. */}
+              <Billboard position={[0, -0.95, 0]}>
+                <Text
+                  font="/fonts/CormorantGaramond.ttf"
+                  fontSize={0.58}
+                  color="#f7f8f4"
+                  anchorX="center"
+                  anchorY="middle"
+                  letterSpacing={0.04}
+                  outlineWidth={0.018}
+                  outlineColor="#091118"
+                >
+                  {skill}
+                </Text>
+              </Billboard>
             </group>
           )
         })}

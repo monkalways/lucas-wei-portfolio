@@ -118,30 +118,35 @@ export function GrassName({
 
   useEffect(() => {
     let disposed = false
-    opentype.load(FONT_URL, (err, font) => {
-      if (err || !font || disposed) {
-        if (err) console.log('[v0] font load error', err)
-        return
-      }
-      const unitsPerEm = font.unitsPerEm || 1000
-      const scale = targetHeight / (unitsPerEm * 0.7)
-      const fontPath = font.getPath(TEXT, 0, 0, unitsPerEm * 0.7)
-      const shapes = pathToShapes(fontPath, scale)
+    // Fetch the font and parse it via opentype.parse (the callback-based
+    // opentype.load is deprecated in newer opentype.js).
+    fetch(FONT_URL)
+      .then((res) => res.arrayBuffer())
+      .then((buffer) => {
+        if (disposed) return
+        const font = opentype.parse(buffer)
+        const unitsPerEm = font.unitsPerEm || 1000
+        const scale = targetHeight / (unitsPerEm * 0.7)
+        const fontPath = font.getPath(TEXT, 0, 0, unitsPerEm * 0.7)
+        const shapes = pathToShapes(fontPath, scale)
 
-      const geo = new THREE.ExtrudeGeometry(shapes, {
-        depth: 0.9,
-        bevelEnabled: true,
-        bevelThickness: 0.1,
-        bevelSize: 0.06,
-        bevelSegments: 4,
-        curveSegments: 12,
+        const geo = new THREE.ExtrudeGeometry(shapes, {
+          depth: 0.9,
+          bevelEnabled: true,
+          bevelThickness: 0.1,
+          bevelSize: 0.06,
+          bevelSegments: 4,
+          curveSegments: 12,
+        })
+        geo.center()
+        geo.computeVertexNormals()
+        // Scale UVs so the grass texture tiles across the letters.
+        geo.computeBoundingBox()
+        setGeometry(geo)
       })
-      geo.center()
-      geo.computeVertexNormals()
-      // Scale UVs so the grass texture tiles across the letters.
-      geo.computeBoundingBox()
-      setGeometry(geo)
-    })
+      .catch((err) => {
+        if (!disposed) console.error('[centre-court] font load error', err)
+      })
     return () => {
       disposed = true
     }

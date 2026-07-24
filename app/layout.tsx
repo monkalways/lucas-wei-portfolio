@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Cormorant_Garamond, Geist } from 'next/font/google'
+import { Cormorant_Garamond, Geist, Fraunces } from 'next/font/google'
 import './globals.css'
 
 const cormorant = Cormorant_Garamond({
@@ -14,11 +14,18 @@ const geist = Geist({
   variable: '--font-sans',
 })
 
+// Fancy display font used for the contact email.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  weight: ['400', '500', '600'],
+  variable: '--font-fancy',
+})
+
 export const metadata: Metadata = {
   title: 'Lucas Wei — Centre Court',
   description:
-    'The personal portfolio of Lucas Wei. Developer, Debater, Designer. Walk through a 3D tennis stadium.',
-  generator: 'v0.app',
+    'The personal portfolio of Lucas Wei — student, debater, and founder of the clothing brand Wayup. Walk through a 3D tennis stadium.',
   icons: {
     icon: [
       {
@@ -51,7 +58,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`dark ${geist.variable} ${cormorant.variable}`}>
+    <html
+      lang="en"
+      className={`dark ${geist.variable} ${cormorant.variable} ${fraunces.variable}`}
+    >
       <body className="bg-background text-foreground antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

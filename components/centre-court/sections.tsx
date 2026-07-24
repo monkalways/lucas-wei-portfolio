@@ -1,15 +1,17 @@
 'use client'
 
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   MessagesSquare,
-  Code2,
-  Rocket,
+  Shirt,
   Trophy,
+  Sparkles,
   Mail,
   ExternalLink,
   MapPin,
   ArrowDown,
+  ArrowRight,
 } from 'lucide-react'
 import {
   hero,
@@ -22,10 +24,10 @@ import {
 } from '@/lib/content'
 
 const projectIcons = {
+  brand: Shirt,
   debate: MessagesSquare,
-  startup: Rocket,
-  code: Code2,
   leadership: Trophy,
+  next: Sparkles,
 } as const
 
 const fadeUp = {
@@ -92,9 +94,16 @@ function Title({ children }: { children: React.ReactNode }) {
 export function HeroSection() {
   return (
     <SectionShell id="hero">
-      <div className="pointer-events-none flex w-full flex-col items-center justify-end">
-        {/* The name itself is rendered in 3D behind this. */}
-        <div className="mt-[46vh] flex flex-col items-center gap-6">
+      <div className="pointer-events-none flex w-full flex-col items-center justify-center">
+        <div className="mt-[34vh] flex flex-col items-center gap-5">
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+            className="text-center font-serif text-6xl font-light tracking-tight text-foreground drop-shadow-[0_2px_20px_rgba(0,0,0,0.5)] md:text-8xl"
+          >
+            {hero.name}
+          </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -173,12 +182,17 @@ export function HobbiesSection() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {hobbies.items.map((h, i) => (
             <motion.div key={h.name} variants={fadeUp} custom={i + 2}>
-              <Glass className="h-full p-6 md:p-6">
-                <h3 className="font-serif text-2xl text-foreground">{h.name}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {h.blurb}
-                </p>
-              </Glass>
+              <Link href={`/hobbies/${h.slug}`} className="block h-full">
+                <Glass className="group h-full p-6 transition-colors hover:border-primary/40 md:p-6">
+                  <h3 className="font-serif text-2xl text-foreground">{h.name}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {h.blurb}
+                  </p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-xs uppercase tracking-widest text-primary opacity-80 transition-opacity group-hover:opacity-100">
+                    Explore <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </Glass>
+              </Link>
             </motion.div>
           ))}
         </div>
@@ -246,7 +260,7 @@ export function ProjectsSection() {
         </motion.div>
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           {projects.items.map((p, i) => {
-            const Icon = projectIcons[p.icon as keyof typeof projectIcons] ?? Code2
+            const Icon = projectIcons[p.icon as keyof typeof projectIcons] ?? Sparkles
             return (
               <motion.div
                 key={p.name}
@@ -338,10 +352,15 @@ export function ContactSection() {
           variants={fadeUp}
           custom={3}
           href={`mailto:${contact.email}`}
-          className="mt-8 inline-flex items-center gap-3 rounded-full bg-primary px-8 py-4 font-medium text-primary-foreground transition-transform hover:scale-105"
+          className="group mt-8 inline-flex items-center gap-3 rounded-full border border-primary/40 bg-primary/10 px-8 py-4 text-primary transition-all hover:scale-105 hover:bg-primary/20"
         >
           <Mail className="h-5 w-5" />
-          {contact.email}
+          <span
+            className="text-2xl italic tracking-wide md:text-3xl"
+            style={{ fontFamily: 'var(--font-fancy)' }}
+          >
+            {contact.email}
+          </span>
         </motion.a>
         <motion.div
           variants={fadeUp}

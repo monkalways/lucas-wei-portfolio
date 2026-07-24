@@ -24,15 +24,15 @@ export function Lighting() {
   useFrame(() => {
     const night = smoothstep(0.8, 0.98, progressRef.current)
     if (sun.current) {
-      sun.current.intensity = THREE.MathUtils.lerp(2.6, 0.15, night)
+      sun.current.intensity = THREE.MathUtils.lerp(3.1, 0.45, night)
       sun.current.color.copy(goldenSun).lerp(nightSun, night)
     }
     if (amb.current) {
-      amb.current.intensity = THREE.MathUtils.lerp(0.5, 0.15, night)
+      amb.current.intensity = THREE.MathUtils.lerp(0.8, 0.3, night)
       amb.current.color.copy(goldenAmb).lerp(nightAmb, night)
     }
     if (hemi.current) {
-      hemi.current.intensity = THREE.MathUtils.lerp(0.7, 0.2, night)
+      hemi.current.intensity = THREE.MathUtils.lerp(0.95, 0.4, night)
     }
   })
 

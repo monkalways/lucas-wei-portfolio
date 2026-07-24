@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useScrollProgress } from '@/lib/scroll-store'
-import { sectionOrder } from '@/lib/content'
+import { hero } from '@/lib/content'
+import { useServeHud } from '@/lib/serve-store'
 
 /* --------------------------- Tennis scoreboard -------------------------- */
 const TENNIS = [0, 15, 30, 40]
@@ -112,6 +113,30 @@ export function BallScrollNav() {
   )
 }
 
+/* --------------------- Shrunk name (sticky, top center) ----------------- */
+export function MiniName() {
+  const p = useScrollProgress()
+  // Appears once the big hero name has scrolled off (early in the first section).
+  const visible = p > 0.05
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-6 z-40 flex justify-center">
+      <AnimatePresence>
+        {visible && (
+          <motion.span
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="font-serif text-sm uppercase tracking-[0.4em] text-foreground/90 drop-shadow-[0_1px_10px_rgba(0,0,0,0.6)]"
+          >
+            {hero.name}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 /* ----------------------------- Custom cursor ---------------------------- */
 export function TennisCursor() {
   const dot = useRef<HTMLDivElement>(null)
@@ -123,27 +148,15 @@ export function TennisCursor() {
     setEnabled(true)
     document.documentElement.classList.add('cc-custom-cursor')
 
-    let raf = 0
-    const target = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-    const pos = { ...target }
-
+    // Lock the ball exactly to the pointer — no smoothing lag.
     const onMove = (e: MouseEvent) => {
-      target.x = e.clientX
-      target.y = e.clientY
-    }
-    const loop = () => {
-      pos.x += (target.x - pos.x) * 0.2
-      pos.y += (target.y - pos.y) * 0.2
       if (dot.current) {
-        dot.current.style.transform = `translate(${pos.x - 12}px, ${pos.y - 12}px)`
+        dot.current.style.transform = `translate(${e.clientX - 12}px, ${e.clientY - 12}px)`
       }
-      raf = requestAnimationFrame(loop)
     }
     window.addEventListener('mousemove', onMove)
-    raf = requestAnimationFrame(loop)
     return () => {
       window.removeEventListener('mousemove', onMove)
-      cancelAnimationFrame(raf)
       document.documentElement.classList.remove('cc-custom-cursor')
     }
   }, [])
@@ -164,29 +177,45 @@ export function TennisCursor() {
   )
 }
 
-/* ------------------------------ Serve flash ----------------------------- */
-export function ServeFlash({ trigger }: { trigger: number }) {
-  const [show, setShow] = useState(false)
-  useEffect(() => {
-    if (trigger === 0) return
-    setShow(true)
-    const id = setTimeout(() => setShow(false), 1400)
-    return () => clearTimeout(id)
-  }, [trigger])
-
+/* ------------------------- Serve mini-game overlay ---------------------- */
+export function ServeOverlay() {
+  const hud = useServeHud()
+  const tone =
+    hud.quality >= 1
+      ? 'text-primary border-primary/50'
+      : hud.quality >= 0.5
+        ? 'text-foreground border-white/30'
+        : hud.result
+          ? 'text-red-300 border-red-400/40'
+          : 'text-foreground border-white/20'
   return (
     <AnimatePresence>
-      {show && (
+      {hud.show && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.1 }}
-          transition={{ duration: 0.3 }}
-          className="pointer-events-none fixed inset-x-0 top-24 z-40 flex justify-center"
+          initial={{ opacity: 0, y: 24, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 16, scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+          className="pointer-events-none fixed inset-x-0 bottom-28 z-40 flex justify-center px-6"
         >
-          <span className="rounded-full border border-primary/40 bg-[#0b1620]/70 px-6 py-2 font-mono text-lg tracking-widest text-primary backdrop-blur">
-            ACE · 220 km/h
-          </span>
+          <div
+            className={`rounded-2xl border bg-[#0b1620]/85 px-8 py-4 text-center shadow-2xl backdrop-blur-md ${tone}`}
+          >
+            {hud.result ? (
+              <span className="font-serif text-2xl md:text-3xl">
+                {hud.result}
+              </span>
+            ) : (
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-serif text-xl italic text-foreground md:text-2xl">
+                  {hud.prompt}
+                </span>
+                <span className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+                  press T to strike
+                </span>
+              </div>
+            )}
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

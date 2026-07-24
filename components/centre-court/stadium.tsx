@@ -110,40 +110,60 @@ function Floodlight({
   position: [number, number, number]
   night: number
 }) {
+  // Rotate the rig so the lamp bank faces the court centre (world origin).
+  const facing = Math.atan2(-position[0], -position[2])
+  const lampGlow = 1.4 + night * 5
   return (
     <group position={position}>
-      {/* Tower */}
-      <mesh position={[0, 9, 0]} castShadow>
-        <cylinderGeometry args={[0.25, 0.4, 18, 10]} />
-        <meshStandardMaterial color={'#0e1a1f'} metalness={0.4} roughness={0.7} />
-      </mesh>
-      {/* Lamp head */}
-      <mesh position={[0, 18.2, 0]}>
-        <boxGeometry args={[3.4, 1.6, 0.5]} />
-        <meshStandardMaterial color={'#1a2a30'} metalness={0.5} roughness={0.5} />
-      </mesh>
-      {/* Individual lamps */}
-      {[-1.1, -0.37, 0.37, 1.1].map((x) =>
-        [-0.4, 0.4].map((y) => (
-          <mesh key={`${x}-${y}`} position={[x, 18.2 + y, 0.28]}>
-            <circleGeometry args={[0.22, 16]} />
-            <meshStandardMaterial
-              color={'#fffdf0'}
-              emissive={'#fff8e0'}
-              emissiveIntensity={0.4 + night * 3.5}
-            />
+      <group rotation={[0, facing, 0]}>
+        {/* Tapered pole */}
+        <mesh position={[0, 9, 0]} castShadow>
+          <cylinderGeometry args={[0.18, 0.5, 18, 12]} />
+          <meshStandardMaterial color={'#0c171c'} metalness={0.5} roughness={0.6} />
+        </mesh>
+        {/* Support arm reaching toward the court */}
+        <mesh position={[0, 17.5, 0.55]} rotation={[0.35, 0, 0]}>
+          <boxGeometry args={[0.25, 0.25, 2.2]} />
+          <meshStandardMaterial color={'#0c171c'} metalness={0.5} roughness={0.6} />
+        </mesh>
+        {/* Banked lamp head, tilted down toward the court */}
+        <group position={[0, 18.4, 1.0]} rotation={[0.5, 0, 0]}>
+          <mesh castShadow>
+            <boxGeometry args={[4.2, 2.3, 0.4]} />
+            <meshStandardMaterial color={'#16262c'} metalness={0.5} roughness={0.5} />
           </mesh>
-        )),
-      )}
+          {/* Grid of individual lamps */}
+          {[-1.6, -0.8, 0, 0.8, 1.6].map((x) =>
+            [-0.75, 0, 0.75].map((y) => (
+              <mesh key={`${x}-${y}`} position={[x, y, 0.23]}>
+                <circleGeometry args={[0.3, 20]} />
+                <meshStandardMaterial
+                  color={'#fffdf0'}
+                  emissive={'#fff4d0'}
+                  emissiveIntensity={lampGlow}
+                  toneMapped={false}
+                />
+              </mesh>
+            )),
+          )}
+        </group>
+      </group>
+      {/* Local glow — reads by day, blooms strongly at night */}
+      <pointLight
+        position={[0, 18.4, 0]}
+        intensity={1.4 + night * 22}
+        distance={48}
+        color={'#fff2d6'}
+      />
       {night > 0.05 && (
         <spotLight
-          position={[0, 18, 0.5]}
-          angle={0.5}
+          position={[0, 18, 0]}
+          angle={0.55}
           penumbra={0.6}
-          intensity={night * 140}
-          distance={70}
+          intensity={night * 160}
+          distance={85}
           color={'#fff6df'}
-          target-position={[position[0] * -0.6, 0, position[2] * -0.6]}
+          target-position={[-position[0], 0, -position[2]]}
           castShadow
         />
       )}
@@ -152,43 +172,82 @@ function Floodlight({
 }
 
 /**
- * Simple tiered stands surrounding the court.
+ * Raked grandstand bowl surrounding the court: stepped risers with alternating
+ * seat rows and a dark-green front barrier wall.
  */
 function Stands() {
-  const tiers = [0, 1, 2, 3, 4, 5]
+  const tiers = [0, 1, 2, 3, 4, 5, 6]
+  const len = 52
   return (
     <group>
       {(['x', 'z'] as const).map((axis) =>
-        [-1, 1].map((sign) => (
-          <group key={`${axis}-${sign}`}>
-            {tiers.map((t) => {
-              const offset = 16 + t * 2.2
-              const height = 1.2 + t * 1.4
-              const isX = axis === 'x'
-              return (
-                <mesh
-                  key={t}
-                  position={
-                    isX
-                      ? [sign * offset, height / 2, 0]
-                      : [0, height / 2, sign * offset]
-                  }
-                  receiveShadow
-                >
-                  <boxGeometry
-                    args={
-                      isX ? [1.9, height, 46] : [46, height, 1.9]
-                    }
-                  />
-                  <meshStandardMaterial
-                    color={t % 2 === 0 ? '#0f1d24' : '#132730'}
-                    roughness={0.9}
-                  />
-                </mesh>
-              )
-            })}
-          </group>
-        )),
+        [-1, 1].map((sign) => {
+          const isX = axis === 'x'
+          return (
+            <group key={`${axis}-${sign}`}>
+              {tiers.map((t) => {
+                const offset = 15 + t * 1.9
+                const height = 1.0 + t * 1.25
+                const seatOffset = offset - 0.7 // toward the court
+                return (
+                  <group key={t}>
+                    {/* Riser block (the step) */}
+                    <mesh
+                      position={
+                        isX
+                          ? [sign * offset, height / 2, 0]
+                          : [0, height / 2, sign * offset]
+                      }
+                      receiveShadow
+                      castShadow
+                    >
+                      <boxGeometry args={isX ? [1.9, height, len] : [len, height, 1.9]} />
+                      <meshStandardMaterial
+                        color={t % 2 === 0 ? '#101f27' : '#163039'}
+                        roughness={0.92}
+                      />
+                    </mesh>
+                    {/* Seat-row lip along the top front edge */}
+                    <mesh
+                      position={
+                        isX
+                          ? [sign * seatOffset, height + 0.04, 0]
+                          : [0, height + 0.04, sign * seatOffset]
+                      }
+                    >
+                      <boxGeometry args={isX ? [0.5, 0.16, len] : [len, 0.16, 0.5]} />
+                      <meshStandardMaterial
+                        color={'#26454f'}
+                        roughness={0.8}
+                        emissive={'#0b1c22'}
+                        emissiveIntensity={0.3}
+                      />
+                    </mesh>
+                  </group>
+                )
+              })}
+            </group>
+          )
+        }),
+      )}
+
+      {/* Dark-green front barrier wall around the court */}
+      {(['x', 'z'] as const).map((axis) =>
+        [-1, 1].map((sign) => {
+          const isX = axis === 'x'
+          const wall = 13.5
+          return (
+            <mesh
+              key={`wall-${axis}-${sign}`}
+              position={isX ? [sign * wall, 0.7, 0] : [0, 0.7, sign * wall]}
+              castShadow
+              receiveShadow
+            >
+              <boxGeometry args={isX ? [0.4, 1.4, 54] : [54, 1.4, 0.4]} />
+              <meshStandardMaterial color={'#0d3b2a'} roughness={0.8} />
+            </mesh>
+          )
+        }),
       )}
     </group>
   )

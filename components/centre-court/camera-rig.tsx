@@ -3,6 +3,7 @@
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { progressRef } from '@/lib/scroll-store'
+import { serveControl } from '@/lib/serve-store'
 
 type Key = {
   pos: [number, number, number]
@@ -14,8 +15,8 @@ type Key = {
 // floodlights at night.
 const KEYS: Key[] = [
   { pos: [0, 19, 34], target: [0, 3, -2] }, // hero — high above
-  { pos: [0, 7, 24], target: [0, 3, -2] }, // about — descending
-  { pos: [-3, 2.4, 16], target: [0, 2, -4] }, // hobbies — on the baseline
+  { pos: [0, 13, 22], target: [0, 3, -2] }, // about — descending, still above the stands
+  { pos: [-3, 2.4, 11], target: [0, 2, -4] }, // hobbies — dropped inside the court, on the baseline
   { pos: [5, 3.2, 11], target: [0, 2, -5] }, // traveling — drifting in
   { pos: [-6, 4, 6], target: [0, 2.5, -7] }, // projects — near service line
   { pos: [0, 4.5, 3], target: [0, 3.5, -9] }, // skills — center, looking down court
@@ -51,7 +52,19 @@ function easeInOut(t: number) {
 export function CameraRig() {
   const { camera } = useThree()
 
+  const fwd = new THREE.Vector3()
+
   useFrame((state, delta) => {
+    // While the serve mini-game is running it owns the camera. Keep our
+    // smoothed state synced to wherever the serve left the camera, so scroll
+    // control resumes from there instead of snapping back.
+    if (serveControl.active) {
+      curPos.copy(camera.position)
+      fwd.set(0, 0, -1).applyQuaternion(camera.quaternion)
+      curTarget.copy(camera.position).add(fwd)
+      return
+    }
+
     const p = progressRef.current
     const segs = KEYS.length - 1
     const scaled = p * segs

@@ -4,15 +4,15 @@ import { memo } from 'react'
 import {
   EffectComposer,
   Bloom,
-  DepthOfField,
   Vignette,
   Noise,
 } from '@react-three/postprocessing'
+import { Environment } from '@react-three/drei'
 import { Stadium } from './stadium'
-import { GrassName } from './grass-name'
+import { GradientSky } from './sky'
 import { Lighting } from './lighting'
 import { CameraRig } from './camera-rig'
-import { DustParticles, FloatingBalls, FlyingBall } from './ambient'
+import { DustParticles, RestingBalls, ScrollRally } from './ambient'
 import { OrbitingSkills, ProjectPlatforms } from './scene-props'
 import { ServeBall } from './serve-ball'
 import { useScrollProgress } from '@/lib/scroll-store'
@@ -31,24 +31,42 @@ export function Scene({ onServe }: { onServe?: () => void }) {
 
   return (
     <>
-      <color attach="background" args={['#091118']} />
-      <fog attach="fog" args={['#091118', 24, 90]} />
+      {/* Fog colour MUST match GradientSky's bottomColor (see sky.tsx). */}
+      <fog attach="fog" args={['#e7c6a2', 45, 125]} />
+
+      {/* Clean gradient backdrop (avoids the HDRI's grey ground hemisphere). */}
+      <GradientSky />
+
+      {/* HDRI used for lighting only — natural colour + soft reflections. */}
+      <Environment
+        files="/hdri/pink_sunrise_1k.hdr"
+        environmentIntensity={0.6}
+      />
 
       <Lighting />
       <CameraRig />
 
       <MemoStadium night={night} />
-      <GrassName position={[0, 2.6, 4]} scale={1} />
 
       <OrbitingSkills />
       <ProjectPlatforms />
 
-      <FloatingBalls />
-      <FlyingBall />
-      <DustParticles count={350} />
-      <ServeBall onServe={onServe} />
+      <RestingBalls />
+      <ScrollRally />
+      <DustParticles count={300} />
+      <ServeBall />
 
-      {/* TEMP: effects disabled for debugging visibility */}
+      {/* Cinematic post-processing: subtle glow, film grain, edge vignette. */}
+      <EffectComposer>
+        <Bloom
+          intensity={0.7}
+          luminanceThreshold={0.55}
+          luminanceSmoothing={0.3}
+          mipmapBlur
+        />
+        <Vignette offset={0.25} darkness={0.65} />
+        <Noise opacity={0.025} premultiply />
+      </EffectComposer>
     </>
   )
 }
